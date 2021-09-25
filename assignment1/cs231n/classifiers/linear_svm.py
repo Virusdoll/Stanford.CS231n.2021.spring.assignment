@@ -54,7 +54,15 @@ def svm_loss_naive(W, X, y, reg):
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    for i in range(num_train):
+        scores = X[i] @ W
+        correct_class_score = scores[y[i]]
+        margin = scores - correct_class_score + 1 # delta = 1
+        p_margin = (margin > 0).astype(int)
+        p_margin[y[i]] = - (sum(p_margin) - p_margin[y[i]])
+        dW += X[i].reshape(-1, 1) @ p_margin.reshape(1, -1)
+    dW /= num_train
+    dW += 2 * reg * W
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     
@@ -77,8 +85,22 @@ def svm_loss_vectorized(W, X, y, reg):
     # result in loss.                                                           #
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+    
+    # compute the loss and the gradient
+    num_train = X.shape[0]
+    
+    scores = X @ W
+    correct_class_score = scores[range(num_train), list(y)].reshape(-1, 1)
+    margin = np.maximum(0, scores - correct_class_score + 1) # delta = 1
+    margin[range(num_train), list(y)] = 0
+    loss = np.sum(margin)
 
-    pass
+    # Right now the loss is a sum over all training examples, but we want it
+    # to be an average instead so we divide by num_train.
+    loss /= num_train
+
+    # Add regularization to the loss.
+    loss += reg * np.sum(W * W)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -92,8 +114,13 @@ def svm_loss_vectorized(W, X, y, reg):
     # loss.                                                                     #
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-    pass
+    
+    p_margin = (margin > 0).astype(int)
+    p_margin[range(num_train), list(y)] = -(np.sum(p_margin, axis=1)
+                                            - p_margin[range(num_train), list(y)])
+    dW = X.T @ p_margin
+    dW /= num_train
+    dW += 2 * reg * W
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
